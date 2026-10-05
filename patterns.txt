@@ -1,0 +1,10 @@
+# name<TAB>regex (Python re). Add your own redaction or validation rule here.
+legacy-docs	ghs_[0-9a-zA-Z]{36}
+gitleaks-8.30.1	(?:ghu|ghs)_[0-9a-zA-Z]{36}
+underscore-36	(?:ghu|ghs)_[A-Za-z0-9_]{36}
+word-bounded	\bghs_[A-Za-z0-9_]{36}\b
+trufflehog-3.97.9	\b(?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,255}\b
+github-2026-05-15	ghs_[A-Za-z0-9\._]{36,}
+github-2026-05-26	ghs_[A-Za-z0-9\.\-_]{36,}
+gitleaks-pr-2193	(?:ghu_[0-9a-zA-Z]{36}|ghs_(?:[0-9a-zA-Z]{36}|[0-9]+_eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+))
+trufflehog-pr-5156	\b(ghs_[0-9]+_eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]+|(?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,255}\b)

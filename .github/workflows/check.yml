@@ -1,4 +1,4 @@
-name: probe
+name: check
 on: workflow_dispatch
 permissions:
   contents: read
@@ -23,7 +23,7 @@ jobs:
       - name: Token shape
         run: python3 scripts/shape.py
       - name: Redaction regexes
-        run: python3 scripts/regex_check.py
+        run: cd scripts && python3 regex_check.py
       - name: Scanners
         run: |
           mkdir -p scan && printf 'GITHUB_TOKEN=%s\n' "$TOKEN" > scan/app.env
