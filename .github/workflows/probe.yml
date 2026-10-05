@@ -1,0 +1,23 @@
+name: probe
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  shape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Token shape (no secret material printed)
+        env:
+          T: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import os, re, base64, json
+          t = os.environ["T"]
+          print("length:", len(t))
+          print("prefix:", t[:4])
+          mask = re.sub(r"[A-Za-z0-9]", "x", t)
+          seps = [(i, c) for i, c in enumerate(t) if not c.isalnum()]
+          print("separators (index, char):", seps[:10])
+          parts = re.split(r"[._]", t)
+          print("segment lengths split on . and _:", [len(p) for p in parts])
+          PY
