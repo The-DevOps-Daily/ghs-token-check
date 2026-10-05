@@ -25,7 +25,7 @@ cd scripts && python3 aggregate.py ../samples.jsonl
 ## What each script does
 
 - `scripts/shape.py`: length, separators, segment lengths, the decoded JWT header and the payload claim names. It never prints the payload values or the signature.
-- `scripts/regex_check.py`: for each pattern, whether it matches and how many token characters stay visible after a `re.sub` redaction.
+- `scripts/regex_check.py`: for each pattern, whether it matches and how many token characters fall outside the first match. For patterns that start with `ghs_`, which appears once per token, that equals what a `re.sub` redaction leaves visible.
 - `scripts/sample.py`: the same per job, plus a short hash of the public `ghs_<app id>_<header>` prefix to show it never changes.
 - `.github/workflows/check.yml` also runs the latest gitleaks, trufflehog and detect-secrets on a file that holds the token, and inserts it into `VARCHAR(40)` and `VARCHAR(255)` columns on Postgres 17 and MySQL 8.4.
 
