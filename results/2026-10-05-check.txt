@@ -1,9 +1,9 @@
-# check.yml run 37286831569, 2026-10-05, ubuntu-latest, GITHUB_TOKEN of a private test repo
+# check.yml run 37287231363, 2026-10-05, ubuntu-latest, GITHUB_TOKEN of a private test repo
 
 == Token shape
 length: 377
 prefix: ghs_
-separators (index, char): [(3, '_'), (9, '_'), (46, '.'), (290, '.'), (315, '-')]
+separators (index, char): [(3, '_'), (9, '_'), (46, '.'), (290, '.'), (321, '-'), (360, '-')]
 app id segment: 15368 (public: the app's numeric id)
 segment lengths header/payload/signature: 36 243 86
 chars used outside [A-Za-z0-9]: ['-']
@@ -19,7 +19,7 @@ gitleaks-8.30.1      matched=no  match_len=   0 visible_after_redaction= 377
 underscore-36        matched=yes match_len=  40 visible_after_redaction= 337
 word-bounded         matched=no  match_len=   0 visible_after_redaction= 377
 trufflehog-3.97.9    matched=yes match_len=  46 visible_after_redaction= 331
-github-2026-05-15    matched=yes match_len= 315 visible_after_redaction=  62
+github-2026-05-15    matched=yes match_len= 321 visible_after_redaction=  56
 github-2026-05-26    matched=yes match_len= 377 visible_after_redaction=   0
 gitleaks-pr-2193     matched=yes match_len= 377 visible_after_redaction=   0
 trufflehog-pr-5156   matched=yes match_len= 377 visible_after_redaction=   0
@@ -27,8 +27,13 @@ trufflehog-pr-5156   matched=yes match_len= 377 visible_after_redaction=   0
 == Scanners
 gitleaks v8.30.1
 gitleaks findings: 0
+gitleaks with config/gitleaks.toml findings: 1
+  github-app-installation-token-jwt secret_len 377
 trufflehog 3.97.9
 trufflehog findings: 1
+  Github verified False raw_len 46
+trufflehog with config/trufflehog.yaml findings: 2
+  CustomRegex verified False raw_len 377
   Github verified False raw_len 46
 detect-secrets 1.5.0
 detect-secrets findings: 2
