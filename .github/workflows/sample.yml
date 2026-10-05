@@ -13,3 +13,4 @@ jobs:
       - run: python3 scripts/sample.py
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MASK_TEST: ${{ matrix.i == 1 && '1' || '0' }}
