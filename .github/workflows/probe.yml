@@ -3,21 +3,55 @@ on: workflow_dispatch
 permissions:
   contents: read
 jobs:
-  shape:
+  check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: pw }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+      mysql:
+        image: mysql:8.4
+        env: { MYSQL_ROOT_PASSWORD: pw }
+        ports: ["3306:3306"]
+        options: --health-cmd "mysqladmin ping -ppw" --health-interval 5s --health-retries 20
+    env:
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Token shape (no secret material printed)
-        env:
-          T: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v5
+      - name: Token shape
+        run: python3 scripts/shape.py
+      - name: Redaction regexes
+        run: python3 scripts/regex_check.py
+      - name: Scanners
         run: |
-          python3 - <<'PY'
-          import os, re, base64, json
-          t = os.environ["T"]
-          print("length:", len(t))
-          print("prefix:", t[:4])
-          mask = re.sub(r"[A-Za-z0-9]", "x", t)
-          seps = [(i, c) for i, c in enumerate(t) if not c.isalnum()]
-          print("separators (index, char):", seps[:10])
-          parts = re.split(r"[._]", t)
-          print("segment lengths split on . and _:", [len(p) for p in parts])
-          PY
+          mkdir -p scan && printf 'GITHUB_TOKEN=%s\n' "$TOKEN" > scan/app.env
+          GL=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | python3 -c "import json,sys;print(json.load(sys.stdin)['tag_name'])")
+          curl -sL "https://github.com/gitleaks/gitleaks/releases/download/${GL}/gitleaks_${GL#v}_linux_x64.tar.gz" | tar xz gitleaks
+          echo "gitleaks $GL"
+          ./gitleaks dir scan --report-format json --report-path gl.json --exit-code 0 --no-banner >/dev/null 2>&1 || ./gitleaks detect --no-git --source scan --report-format json --report-path gl.json --exit-code 0 --no-banner >/dev/null 2>&1
+          python3 -c "import json;r=json.load(open('gl.json'));print('gitleaks findings:',len(r));[print(' ',f['RuleID'],'secret_len',len(f['Secret'])) for f in r]"
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b . >/dev/null 2>&1
+          ./trufflehog --version 2>&1 | head -1
+          ./trufflehog filesystem scan --json --no-update 2>/dev/null > th.json || true
+          python3 -c "
+          import json
+          rows=[json.loads(l) for l in open('th.json') if l.strip().startswith('{') and 'DetectorName' in l]
+          print('trufflehog findings:',len(rows))
+          for r in rows: print(' ',r['DetectorName'],'verified',r.get('Verified'),'raw_len',len(r.get('Raw','')))
+          "
+          pip install -q detect-secrets 2>/dev/null
+          echo "detect-secrets $(detect-secrets --version)"
+          detect-secrets scan scan/app.env | python3 -c "import json,sys;r=json.load(sys.stdin)['results'];f=r.get('scan/app.env',[]);print('detect-secrets findings:',len(f));[print(' ',x['type']) for x in f]"
+      - name: Database columns
+        run: |
+          sudo apt-get -qq install -y postgresql-client default-mysql-client >/dev/null 2>&1 || true
+          export PGPASSWORD=pw
+          psql -h 127.0.0.1 -U postgres -qc "create table t40(tok varchar(40)); create table t255(tok varchar(255));"
+          for c in t40 t255; do echo "postgres $c:"; psql -h 127.0.0.1 -U postgres -qc "insert into $c values ('$TOKEN')" 2>&1 | sed -E 's/ghs_[^ ]+/<token>/' | head -1; done
+          M="mysql -h 127.0.0.1 -uroot -ppw"
+          $M -e "create database d; create table d.t255(tok varchar(255));" 2>/dev/null
+          echo "mysql 8.4 default sql_mode: $($M -Nse 'select @@global.sql_mode' 2>/dev/null)"
+          echo "mysql strict t255:"; $M -e "insert into d.t255 values ('$TOKEN')" 2>&1 | grep -v Warning | sed -E 's/ghs_[^ ]+/<token>/' | head -1
+          echo "mysql non-strict t255:"; $M -e "set session sql_mode=''; insert into d.t255 values ('$TOKEN'); select length(tok) as stored_len from d.t255;" 2>&1 | grep -v Warning
