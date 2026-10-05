@@ -1,0 +1,9 @@
+# Keep the default rules and add one for the stateless installation token format.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "github-app-installation-token-jwt"
+description = "GitHub App installation token, stateless ghs_<app id>_<JWT> format"
+regex = '''ghs_[0-9]+_eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'''
+keywords = ["ghs_"]

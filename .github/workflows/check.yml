@@ -32,6 +32,8 @@ jobs:
           echo "gitleaks $GL"
           ./gitleaks dir scan --report-format json --report-path gl.json --exit-code 0 --no-banner >/dev/null 2>&1 || ./gitleaks detect --no-git --source scan --report-format json --report-path gl.json --exit-code 0 --no-banner >/dev/null 2>&1
           python3 -c "import json;r=json.load(open('gl.json'));print('gitleaks findings:',len(r));[print(' ',f['RuleID'],'secret_len',len(f['Secret'])) for f in r]"
+          ./gitleaks dir scan --config config/gitleaks.toml --report-format json --report-path gl2.json --exit-code 0 --no-banner >/dev/null 2>&1
+          python3 -c "import json;r=json.load(open('gl2.json'));print('gitleaks with config/gitleaks.toml findings:',len(r));[print(' ',f['RuleID'],'secret_len',len(f['Secret'])) for f in r]"
           curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b . >/dev/null 2>&1
           ./trufflehog --version 2>&1 | head -1
           ./trufflehog filesystem scan --json --no-update 2>/dev/null > th.json || true
@@ -39,6 +41,13 @@ jobs:
           import json
           rows=[json.loads(l) for l in open('th.json') if l.strip().startswith('{') and 'DetectorName' in l]
           print('trufflehog findings:',len(rows))
+          for r in rows: print(' ',r['DetectorName'],'verified',r.get('Verified'),'raw_len',len(r.get('Raw','')))
+          "
+          ./trufflehog filesystem scan --config config/trufflehog.yaml --json --no-update 2>/dev/null > th2.json || true
+          python3 -c "
+          import json
+          rows=[json.loads(l) for l in open('th2.json') if l.strip().startswith('{') and 'DetectorName' in l]
+          print('trufflehog with config/trufflehog.yaml findings:',len(rows))
           for r in rows: print(' ',r['DetectorName'],'verified',r.get('Verified'),'raw_len',len(r.get('Raw','')))
           "
           pip install -q detect-secrets 2>/dev/null

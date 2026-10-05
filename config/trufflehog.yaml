@@ -1,0 +1,7 @@
+# Custom detector for the stateless installation token format, alongside the built-in detectors.
+detectors:
+  - name: GitHubInstallationTokenJWT
+    keywords:
+      - ghs_
+    regex:
+      token: 'ghs_[0-9]+_eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'
